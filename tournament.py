@@ -32,6 +32,11 @@ from sample_players import open_move_score
 from sample_players import improved_score
 from game_agent import CustomPlayer
 from game_agent import custom_score
+from game_agent import custom_score_cbc
+from game_agent import custom_score_inv
+from game_agent import aggresive_start_score
+from game_agent import aggresive_end_score
+
 
 NUM_MATCHES = 5  # number of matches against each opponent
 TIME_LIMIT = 150  # number of milliseconds before timeout
@@ -161,8 +166,12 @@ def main():
     # relative to the performance of the ID_Improved agent to account for
     # faster or slower computers.
     test_agents = [Agent(CustomPlayer(score_fn=improved_score, **CUSTOM_ARGS), "ID_Improved"),
-                   Agent(CustomPlayer(score_fn=custom_score, **CUSTOM_ARGS), "Student")]
-
+                   Agent(CustomPlayer(score_fn=custom_score, **CUSTOM_ARGS), "Student_Normal"),
+                   ]
+#Agent(CustomPlayer(score_fn=custom_score_cbc, **CUSTOM_ARGS), "Student_Cbc"),
+#                   Agent(CustomPlayer(score_fn=custom_score_inv, **CUSTOM_ARGS), "Student_Inv"),
+#                   Agent(CustomPlayer(score_fn=aggresive_start_score, **CUSTOM_ARGS), "Student_Agg_Start"),
+ #                  Agent(CustomPlayer(score_fn=aggresive_end_score, **CUSTOM_ARGS), "Student_Agg_End")
     print(DESCRIPTION)
     for agentUT in test_agents:
         print("")
@@ -176,7 +185,5 @@ def main():
         print("\n\nResults:")
         print("----------")
         print("{!s:<15}{:>10.2f}%".format(agentUT.name, win_ratio))
-
-
 if __name__ == "__main__":
     main()

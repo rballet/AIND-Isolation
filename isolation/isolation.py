@@ -245,7 +245,6 @@ class Board(object):
             if player == self.active_player:
                 return float("-inf")
 
-        return 0.
 
     def __get_moves__(self, move):
         """
