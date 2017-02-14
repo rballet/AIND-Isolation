@@ -8,14 +8,22 @@ relative strength using tournament.py and include the results in your report.
 """
 import random
 import operator 
+import math
 
-borders = [(i,j) for j in range(0,7) for i in [0,6]]
-borders += [(i,j) for i in range(0,7) for j in [0,6] if (i,j) not in borders]
+# Board width and height
+width = 7
+height = 7
 
+# Board position heuristics used by ID_AggStart_2 player
+BP = [[0.5 if 1<i<width-2 and 1<j<height-2 
+                     else 0 if 0<i<width-1 and 0<j<height-1 else -0.5
+                     for i in range(width)] 
+                     for j in range(height)]
+BP[0][0] = BP[0][width-1] = BP[height-1][0] = BP[height-1][width-1] = -1
+                     
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
     pass
-
 
 def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -36,17 +44,10 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    open_spaces = len(game.get_blank_spaces())
-    return float(own_moves - opp_moves*open_spaces)
+    # Choose the ID_AggStart_2 by default
+    return aggstart_2_score(game, player)
     
-def custom_score_cbc(game, player):
+def aggstart_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -73,9 +74,39 @@ def custom_score_cbc(game, player):
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     open_spaces = len(game.get_blank_spaces())
-    return 0.5*float(own_moves - opp_moves)**3
+    return float(own_moves - opp_moves*(3*open_spaces/49))
+    
+def modmid_score(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
 
-def custom_score_inv(game, player):
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+
+    Returns
+    ----------
+    float
+        The heuristic value of the current game state to the specified player.
+    """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+        
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    open_spaces = len(game.get_blank_spaces())
+    return float(own_moves*(1-open_spaces/49) - opp_moves*(open_spaces/49))
+    
+def aggstart_2_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -100,70 +131,13 @@ def custom_score_inv(game, player):
     if game.is_winner(player):
         return float("inf")
     own_moves = len(game.get_legal_moves(player))
+    own_pos = game.get_player_location(player)
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    opp_pos = game.get_player_location(game.get_opponent(player))
     open_spaces = len(game.get_blank_spaces())
-    return float(own_moves*open_spaces - opp_moves)    
+    return float(own_moves - opp_moves*(open_spaces/49*3) + BP[own_pos[0]][own_pos[1]] - BP[opp_pos[0]][opp_pos[1]])
     
-    
-def aggresive_start_score(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
-
-    Parameters
-    ----------
-    game : `isolation.Board`
-        An instance of `isolation.Board` encoding the current state of the
-        game (e.g., player locations and blocked cells).
-
-    player : object
-        A player instance in the current game (i.e., an object corresponding to
-        one of the player objects `game.__player_1__` or `game.__player_2__`.)
-
-    Returns
-    ----------
-    float
-        The heuristic value of the current game state to the specified player.
-    """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    open_spaces = len(game.get_blank_spaces())
-    return float(own_moves*(47 - open_spaces) - opp_moves*open_spaces)
-    
-def aggresive_end_score(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
-
-    Parameters
-    ----------
-    game : `isolation.Board`
-        An instance of `isolation.Board` encoding the current state of the
-        game (e.g., player locations and blocked cells).
-
-    player : object
-        A player instance in the current game (i.e., an object corresponding to
-        one of the player objects `game.__player_1__` or `game.__player_2__`.)
-
-    Returns
-    ----------
-    float
-        The heuristic value of the current game state to the specified player.
-    """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    open_spaces = len(game.get_blank_spaces())
-    return float(own_moves*open_spaces - opp_moves*(47 - open_spaces))
-
-    
+        
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
     and a depth-limited minimax algorithm with alpha-beta pruning. You must
@@ -194,8 +168,8 @@ class CustomPlayer:
         timer expires.
     """
 
-    def __init__(self, search_depth=3, score_fn=custom_score,
-                 iterative=True, method='alphabeta', timeout=10.):
+    def __init__(self, search_depth=3, score_fn=aggstart_score,
+                 iterative=True, method='alphabeta', timeout=5.):
         self.search_depth = search_depth
         self.iterative = iterative
         self.score = score_fn
@@ -244,17 +218,14 @@ class CustomPlayer:
         # Return if there are no legal moves left
         if not legal_moves:
             return (-1, -1)
-        
-        # Avoid the borders in the first moves
-        if self.iterative and len(game.get_blank_spaces()) > 40:
-            legal_moves = [move for move in legal_moves if move not in borders]
-        
+ 
         move = (-1,-1)
-        
+
         if self.iterative:
             # Iterative deepening variable    
             iter_depth = 0
             while True:
+                last_move = move
                 iter_depth += 1
                 try:
                     # Try to evaluate the minimax/alpha-beta algorithm before the timer expires
@@ -266,12 +237,14 @@ class CustomPlayer:
                         raise ValueError("Invalid method!")
                         
                     # Check if the end game was found
-                    if value == float("inf") or value == -float("inf"):
+                    if value == float("inf"):
                         break
-
+                    # If the game is inevitably lost, try to perform the last good movement found and pray! 
+                    if value == -float("inf"):
+                        move = last_move
+                        break
                 except Timeout:
                     # Timeout reached; end iterative deepening
-#                    print(iter_depth)
                     break
         else:
             try:
@@ -284,12 +257,13 @@ class CustomPlayer:
                     raise ValueError("Invalid method!")
 
             except Timeout:
+                print("TIMEOUT")
                 # Timeout reached
                 pass
         # Return the best move from the last completed search iteration
         return move
         
-    def minimax(self, game, max_depth, actual_depth=0, maximizing_player=True):
+    def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
 
         Parameters
@@ -298,7 +272,7 @@ class CustomPlayer:
             An instance of the Isolation game `Board` class representing the
             current game state
 
-        max_depth : int
+        depth : int
             Depth is an integer representing the maximum number of plies to
             search in the game tree before aborting
         
@@ -319,13 +293,13 @@ class CustomPlayer:
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
-
-        # Stop if maximum depth was reached or there are no legal moves left
-        if actual_depth >= max_depth or not game.get_legal_moves(game.active_player):
-            return self.score(game,self), (-1,-1)
         
-        # Increment actual depth
-        actual_depth += 1
+        # Get all possible legal moves for the actual player
+        legal_moves = game.get_legal_moves(game.active_player)
+        
+        # Stop if maximum depth was reached or there are no legal moves left
+        if depth == 0 or not legal_moves:
+            return self.score(game,self), (-1,-1)
         
         # Initiate the best move variable
         best_move = (-1,-1)
@@ -338,26 +312,24 @@ class CustomPlayer:
             # Upper bound
             value = float("inf")
         
-        # Get all possible legal moves for the actual player
-        legal_moves = game.get_legal_moves(game.active_player)
-        
         # Update the value and best move using the recursive minimax algorithm
         for move in legal_moves:
             # Alternate max and min layers using "maximizing_player"
+            result, _ = self.minimax(game.forecast_move(move), depth-1,
+                                     not maximizing_player)
             if maximizing_player:
-                result, _ = self.minimax(game.forecast_move(move), max_depth, 
-                                         actual_depth, maximizing_player=False)
-                value, best_move = max((value, best_move), (result, move), 
+                value, best_move = max((value, best_move), (result, move),
                                         key=operator.itemgetter(0))
             else:
-                result, _ = self.minimax(game.forecast_move(move), max_depth, 
-                                         actual_depth, maximizing_player=True)
-                value, best_move = min((value, best_move), (result, move), 
+                value, best_move = min((value, best_move), (result, move),
                                         key=operator.itemgetter(0))
+        # If it foresees a defeat, try to choose a good move using minimax with depth 1.
+        if value == float("-inf"):
+            best_move = max([self.score(game.forecast_move(move),self),move] for move in legal_moves)[1]
         # Return the utility value of the current node and the next best move
         return value, best_move
         
-    def alphabeta(self, game, max_depth, actual_depth=0, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
+    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
         lectures.
 
@@ -367,12 +339,9 @@ class CustomPlayer:
             An instance of the Isolation game `Board` class representing the
             current game state
 
-        max_depth : int
+        depth : int
             Depth is an integer representing the maximum number of plies to
             search in the game tree before aborting
-        
-        actual_depth: int
-            The current depth in the search tree
 
         alpha : float
             Alpha limits the lower bound of search on minimizing layers
@@ -394,16 +363,13 @@ class CustomPlayer:
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
-
+        
         # Get all possible legal moves for the active player
         legal_moves = game.get_legal_moves(game.active_player)
         
         # Stop if maximum depth was reached or there are no legal moves left
-        if actual_depth >= max_depth or not legal_moves:
+        if depth == 0 or not legal_moves:
             return self.score(game,self), (-1,-1)
-        
-        # Increment actual depth
-        actual_depth += 1
         
         # Set upper/lower bound for value
         if maximizing_player:
@@ -416,37 +382,29 @@ class CustomPlayer:
         # Initiate the best move variable
         best_move = (-1,-1)
         
-        # Winning move
-#        win_move = (-1,-1)
-        
         # Update the value and best move using the recursive alpha-beta algorithm
         for move in legal_moves:
+            result, _ = self.alphabeta(game.forecast_move(move), depth-1, alpha, 
+                                           beta, not maximizing_player)
             # Alternate max and min layers using "maximizing_player"
             if maximizing_player:
-                result, _ = self.alphabeta(game.forecast_move(move), max_depth, 
-                                           actual_depth, alpha, beta, 
-                                           maximizing_player=False)
                 value, best_move = max((value, best_move), (result, move), 
                                         key=operator.itemgetter(0))
-                # Test if it can prune the next nodes
+                # Test if it can prune the next node
                 if value >= beta:
-                    break
+                    return value, best_move
                 # Update the alpha value
                 alpha = max(alpha,value)
             else:
-                result, _ = self.alphabeta(game.forecast_move(move), max_depth, 
-                                           actual_depth, alpha, beta, 
-                                           maximizing_player=True)
-                if result == float("inf"):
-                    win_move = move
                 value, best_move = min((value, best_move), (result, move), 
                                         key=operator.itemgetter(0))
-                # Test if it can prune the next nodes
+                # Test if it can prune the next node
                 if value <= alpha:
-                    break
+                    return value, best_move
                 # Update the beta value
                 beta = min(beta,value)
-#        if value == float("-inf"):
-#            best_move = win_move
+        # If it foresees a defeat, try to choose a good move using minimax with depth 1.
+        if value == float("-inf"):
+            _, best_move = max([self.score(game.forecast_move(move),self),move] for move in legal_moves)[1]
         # Return the utility value of the current node and the next best move
         return value, best_move

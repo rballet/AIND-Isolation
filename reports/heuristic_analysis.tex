@@ -1,0 +1,166 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[english]{babel}
+\usepackage{multirow}
+\usepackage{calc}
+\usepackage{array}
+\usepackage{caption} 
+\captionsetup[table]{skip=5pt}
+
+\newlength\celldim
+\setlength\celldim{2.5em}
+\newlength\fontheight
+\settoheight\fontheight{A}
+\newlength\extraheight
+\setlength\extraheight{\celldim - \fontheight}
+
+\makeatletter
+\newcolumntype{S}
+{ @{}
+	>{\centering\arraybackslash}
+	p{\celldim}
+	<{\rule[-0.5\extraheight]{0pt}%
+		{\fontheight + \extraheight}}
+	@{} }
+\makeatother
+
+
+\title{Advanced Game Playing Agent: \\Heuristic Analysis}
+\author{Raphael Ballet}
+\date{}
+
+\begin{document}
+	\maketitle
+	
+	This work presents the results of the ``Advanced Game Playing Agent'' project, whose goal is to solve the isolation game using minimax, alphabeta, and iterative deepening. A brief summary describing the agent performance using different heuristic functions is also present.
+
+\section{Heuristic Functions}	
+	In order to solve the objective, $11$ different gaming agents were tested. Each agent uses an unique search method and/or heuristic functions. Table 1 presents a summary of the gaming agent used and Table 2 shows the details of each heuristic function adopted for the gaming agents. It is expected that the last four agents using the alphabeta method with iterative deepening outperform the other agents, because it can search at a deeper depth. All four agents differ from one another only in the implemented heuristic function. Therefore, in order to find the most suitable heuristic function, one must compare the performance of these agents against the others.
+	
+	\begin{table}[!h]
+		\centering
+		\caption{Gaming agents adopted in the project.}	
+		\begin{tabular}{lcccc}
+			Name & Method & Search Depth & Iter. Deepening & Heuristics \\
+			\hline
+			Random & X & X & No & X \\
+			MM{\_}Null & Minimax & $3$ & No & Null score \\
+			MM{\_}Open & Minimax & $3$ & No & Open score \\
+			MM{\_}Improved & Minimax & $3$ & No & Improved score \\
+			AB{\_}Null & Alphabeta & $5$ & No & Null score \\
+			AB{\_}Open & Alphabeta & $5$ & No & Open score \\
+			AB{\_}Improved & Alphabeta & $5$ & No & Improved score \\
+			ID{\_}Improved & Alphabeta & X & Yes & Improved score \\
+			ID{\_}AggStart & Alphabeta & X & Yes & AggStart score \\
+			ID{\_}ModMid & Alphabeta & X & Yes & ModMid score \\
+			ID{\_}AggStart\_2 & Alphabeta & X & Yes & AggStart\_2 score \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\begin{table}[!h]
+		\centering
+		\caption{Heuristic functions comparison.}	
+		\begin{tabular}{l | ccc | p{4.5cm}}
+			\multirow{2}{*}{Name} & \multicolumn{3}{c|}{Value} & \multirow{2}{*}{Description} \\
+			     & Lose & - & Win & \\
+			\hline
+			Null & $-\infty$ & $0$ & $\infty$ & This heuristic presumes no knowledge for non-terminal states. \\
+			\hline
+			Open & $-\infty$ & $p$ & $\infty$ & Outputs a score
+			equal to the number $p$ of moves open for the player on the board. \\
+			\hline
+			Improved & $-\infty$ & $p$ - $o$ & $\infty$ & Outputs a
+			score equal to the difference in the number of moves available to the
+			player ($p$) and its opponent ($o$). \\
+			\hline
+			AggStart & $-\infty$ & $p - \left(3\frac{s}{hw}\right)o$ & $\infty$ & Similar to Improved Score, but the opponent's available moves has a higher influence on the score at the beginning. The gain drops from $3$ to $0$ as the number of open spaces ($s$) goes from maximum ($\textrm{height}(h)\times\textrm{width}(w)$) to zero.\\
+			\hline
+			ModMid & $-\infty$ & $\left(1-\frac{s}{hw}\right)p - \left(\frac{s}{hw}\right)o$ & $\infty$ & Similar to the AggStart score. The main difference is that the influence of the player's available moves grows as the number of open spaces lowers.\\
+			\hline
+			AggStart\_2 & $-\infty$ & $\mathrm{AggStart} + \mathrm{BP}(pl)-\mathrm{BP}(op)$ & $\infty$ & Similar to AggStart, but it also considers the position of the player ($pl$) and the opponent ($op$) on the board. \\
+		\end{tabular}
+	\end{table}
+
+	\paragraph{AggStart} This heuristic function tries to reduce the available moves for the opponent at the beginning. It starts more aggressive when there are lots of open spaces and becomes conservative at the end of the game. It was inspired by the fact that almost all games were decided at the beginning of the game.
+	
+	\paragraph{ModMid} This heuristic function is similar to the AggStart, but now the score also varies with the number of available moves for the player. At the beginning there is a lot of influence from the number of available moves for the opponent, at the middle game the score is the same as the Improved Score, and at the end the score is more influenced by the number of available moves for the player.
+	
+	\paragraph{AggStart\_2} The heuristic is also a modification from the AggStart, but now it also evaluate the quality of the player and the opponent positions on the board. The $\mathrm{BP}$ function gives a penalty or a reward for a player depending on its location, as described in Table 3 considering a $7\times7$ board. Based on experience, it is better for the player to stay in the middle of the board when possible, because it has a higher range of moves. It is also not good to be on the borders and it is even worse to be on the corners, because it has only a few possible moves and the opponent could easily trap the player.
+	
+	\begin{table}[!h]
+		\centering
+		\caption{Position values used by AggStart\_2 heuristic function.}
+		\begin{tabular}{|S|S|S|S|S|S|S|}
+			\hline
+			-1   & -0.5 & -0.5 & -0.5 & -0.5 & -0.5 & -1   \\
+			\hline
+			-0.5 &   0  &   0  &   0  &   0  &   0  & -0.5 \\
+			\hline
+			-0.5 &   0  &  0.5 &  0.5 &  0.5 &   0  & -0.5 \\
+			\hline
+			-0.5 &   0  &  0.5 &  0.5 &  0.5 &   0  & -0.5 \\
+			\hline
+			-0.5 &   0  &  0.5 &  0.5 &  0.5 &   0  & -0.5 \\
+			\hline
+			-0.5 &   0  &   0  &   0  &   0  &   0  & -0.5 \\
+			\hline
+			-1   & -0.5 & -0.5 & -0.5 & -0.5 & -0.5 & -1   \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+\pagebreak
+\section{Results}
+	The performance comparison between the four agents was made using the ''tournament.py'' script. Each one of the four agents play $100$ matches against the other agents. The high number of matches is necessary to reduce the variance of the results. Therefore, it is expected to obtain a preciser winning ratio. The heuristic function with the highest winning ratio is considered the best choice for the gaming agent. 
+	
+	Table 4 shows the tournament results. It can be noticed that all agents presented a similar performance in the tournament, presenting a winning ration of about $85\%$. All agents developed in this project had a slight enhancement over the ID\_Improved agent. The agent with the highest winning ratio was the ID\_AggStart\_2. It achieved a $87.00\%$ winning ratio, against the $85.00\%$ of the ID\_Improved agent. The second highest winning ratio was obtained by ID\_AggStart, with $86.14\%$. Lastly, ID\_ModMid came in third place, with $85.43\%$.
+	
+	\begin{table}[h]
+		\centering
+		\caption{Tournament results for each competing agent.}
+		\begin{tabular}{l|c|c|c}
+			Player & Opponent & Results & Win Ratio \\
+			\hline
+			\multirow{7}{*}{ID{\_}Improved} & Random & $95 \times 5$ & \multirow{7}{*}{$85.00\%$}\\
+			 & MM{\_}Null 		& $97 \times 3$ \\
+			 & MM{\_}Open 		& $84 \times 16$ \\
+			 & MM{\_}Improved 	& $84 \times 16$ \\
+			 & AB{\_}Null 		& $89 \times 11$ \\
+			 & AB{\_}Open 		& $75 \times 25$ \\
+			 & AB{\_}Improved 	& $71 \times 29$ \\
+			\hline
+			\multirow{7}{*}{ID{\_}AggStart} & Random & $97 \times 3$ & \multirow{7}{*}{$86.14\%$}\\
+			& MM{\_}Null 		& $93 \times 7$ \\
+			& MM{\_}Open 		& $88 \times 12$ \\
+			& MM{\_}Improved 	& $82 \times 18$ \\
+			& AB{\_}Null 		& $91 \times 9$ \\
+			& AB{\_}Open 		& $76 \times 24$ \\
+			& AB{\_}Improved 	& $76 \times 24$ \\
+			\hline
+			\multirow{7}{*}{ID{\_}ModMid} & Random & $98 \times 2$ & \multirow{7}{*}{$85.43\%$}\\
+			& MM{\_}Null 		& $91 \times 9$ \\
+			& MM{\_}Open 		& $80 \times 20$ \\
+			& MM{\_}Improved 	& $76 \times 24$ \\
+			& AB{\_}Null 		& $91 \times 9$ \\
+			& AB{\_}Open 		& $81 \times 19$ \\
+			& AB{\_}Improved 	& $76 \times 24$ \\
+			\hline
+			\multirow{7}{*}{ID{\_}AggStart\_2} & Random & $99 \times 1$ & \multirow{7}{*}{$87.00\%$}\\
+			& MM{\_}Null 		& $95 \times 5$ \\
+			& MM{\_}Open 		& $86 \times 14$ \\
+			& MM{\_}Improved 	& $81 \times 19$ \\
+			& AB{\_}Null 		& $92 \times 8$ \\
+			& AB{\_}Open 		& $82 \times 16$ \\
+			& AB{\_}Improved 	& $74 \times 26$ \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+\section{Conclusion}
+
+	This work proposed and analyzed three heuristic functions in order to play the Isolation game. The results have shown that the ID\_AggStart\_2 agent presented the highest winning ratio in the tournament. It was developed based on the experience gained by playing the game several times with human competitors. The heuristic function was tuned using different gains for the BP function and the number of available moves. The result was an agent capable of performing better than the other agents in the tournament. It had higher scores over all the matches when compared to the ID\_Improved agent. The last had only one higher score, which was against the MM{\_}Improved. The ID\_AggStart\_2 scored $81 \times 19$ and the MM{\_}Improved, $84 \times 16$. 
+	
+	The agent outperforms the ID\_Improved agent due probably to the aggressive behavior at the beginning, in which the agent tries to reduce the available moves for the opponent while keeping him outside the center positions. It was observed that almost all games were decided at the beginning, so it was this aggressive initial behavior combined with a ``center domination'' heuristic function that enabled a better performance.
+
+\end{document}

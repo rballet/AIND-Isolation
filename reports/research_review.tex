@@ -1,0 +1,28 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[english]{babel}
+\usepackage{multirow}
+
+\title{Advanced Game Playing Agent: \\Research Review - Deep Blue}
+\author{Raphael Ballet}
+\date{}
+
+\begin{document}
+	\maketitle
+This work presents a summary of the Deep Blue computer chess system developed by IBM~\cite{Campbell2002}.
+
+\paragraph{Objective} The main goal of the Deep Blue project was to develop a computer chess system capable of beating world-class chess players. 
+
+\paragraph{Overview} The Deep Blue was a massively parallel system containing $30$ processors IBM RS/6000 SP and $480$ single-chip chess search engines. The main processors were responsible to search the first levels of the chess search tree and then distribute the branches and leafs to the chess search engines. The main search method used was based on the alpha-beta with iterative deepening. It also used quiescence search, transposition tables, an opening book of about $4,000$ positions, an extended book with a database consisting of $700,000$ games of Grandmasters, and also an endgame database with all positions with $5$ or fewer pieces. The complex evaluation function was considered crucial for the Deep Blue performance. It evaluated more than $8,000$ characteristics, such as piece placement and chess concepts, such as center control, king safety, pawn structure, and others.
+
+\paragraph{Results} The impressive computing power and large search capacity allowed the Deep Blue to beat the world chess champion Garry Kasparov in 1997 by a score of $3.5 - 2.5$. In this match, the average search speed was $126$ million positions (nodes) per second, and the maximum sustained speed was $330$ million positions per second. The search depth could reach $12.2$ plies on average.
+
+\paragraph{Conclusion} The Deep Blue was successful in its goal by applying a massively parallel search system, a single-chip chess search engine, a complex evaluation function, non-uniform search, as well as by using an opening book, a large extended book, and the endgame databases. The authors also reported several possible improvements, such as a higher parallel search efficiency, the addition of an external FPGA for better flexibility in the hardware search and evaluation module, and the addition of further pruning mechanisms.
+	
+	
+\begin{thebibliography}{9}	
+	\bibitem{Campbell2002}
+		Murray Campbell, A. Joseph Hoane, Jr., and Feng-hsiung Hsu. 2002. Deep Blue. Artif. Intell. 134, 1-2 (January 2002), 57-83. DOI=http://dx.doi.org/10.1016/S0004-3702(01)00129-1
+\end{thebibliography}
+
+\end{document}
